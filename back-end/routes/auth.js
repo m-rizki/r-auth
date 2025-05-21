@@ -22,6 +22,7 @@ const REFRESH_COOKIE_OPTIONS = {
   secure: process.env.NODE_ENV === "production", // Use secure cookies in production
   sameSite: "strict",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+  // maxAge: 1 * 60 * 1000, // 1 minutes in milliseconds
 };
 
 // Helper functions

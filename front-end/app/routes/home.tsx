@@ -2,7 +2,8 @@ import { Link, redirect, useNavigate } from "react-router";
 import type { Route } from "./+types/home";
 import { KeyRound } from "lucide-react";
 import { useForm } from "react-hook-form";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
+import api from "../api/axios";
 import { serverUrl } from "utils/server-util";
 
 export function meta({}: Route.MetaArgs) {
@@ -20,7 +21,7 @@ type FormDataType = {
 
 export async function clientLoader() {
   try {
-    await axios.get(serverUrl + "/me", { withCredentials: true });
+    await api.get(serverUrl + "/me");
     return redirect("/protected");
   } catch (error) {
     console.error("Error fetching user data:", error);
@@ -63,7 +64,7 @@ export default function Home() {
 
     try {
       const url = serverUrl + "/login";
-      await axios.post(url, payload, { withCredentials: true });
+      await api.post(url, payload);
       reset({ username: "", password: "", accessTokenMaxAge: "15" });
       navigate("/protected");
     } catch (error) {

@@ -1,4 +1,4 @@
-# Auth Example API Documentation
+# Auth Example (Server)
 
 This backend provides authentication APIs using JWT access and refresh tokens, supporting both HTTP-only cookies and Authorization headers. Users can control the access token's max age via the payload.
 

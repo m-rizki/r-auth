@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../api/axios";
 import { Link, useNavigate } from "react-router";
 import { serverUrl } from "utils/server-util";
 
@@ -7,9 +7,7 @@ export default function ProtectedPage() {
 
   const handleMe = async () => {
     try {
-      const response = await axios.get(serverUrl + "/me", {
-        withCredentials: true,
-      });
+      const response = await api.get(serverUrl + "/me");
       const data = response.data;
       alert("Name: " + data.user?.name);
     } catch (error) {
@@ -19,9 +17,7 @@ export default function ProtectedPage() {
 
   const handleLogout = async () => {
     try {
-      const response = await axios.post(serverUrl + "/logout", null, {
-        withCredentials: true,
-      });
+      const response = await api.post(serverUrl + "/logout");
       const data = response.data;
       alert(data.message);
     } catch (error) {
@@ -33,9 +29,7 @@ export default function ProtectedPage() {
 
   const handleRefreshToken = async () => {
     try {
-      const response = await axios.post(serverUrl + "/refresh-token", null, {
-        withCredentials: true,
-      });
+      const response = await api.post(serverUrl + "/refresh-token");
       const data = response.data;
       alert(data.message);
     } catch (error) {
