@@ -7,7 +7,6 @@ const router = express.Router();
 
 const SECRET_KEY = process.env.SECRET_KEY;
 const REFRESH_SECRET_KEY = process.env.REFRESH_SECRET_KEY;
-const ACCESS_TOKEN_EXPIRY = "15m"; // 15 minutes
 const REFRESH_TOKEN_EXPIRY = "7d"; // 7 days
 
 // Cookie options for security
@@ -36,11 +35,19 @@ const writeDatabase = (data) => {
 };
 
 // Generate tokens
-const generateTokens = (user) => {
+const generateTokens = (user, accessTokenMaxAgeMinutes) => {
+  // Use user-provided max age (in minutes) or default to 15
+  let maxAgeMinutes = accessTokenMaxAgeMinutes || 15;
+  if (typeof maxAgeMinutes === "string") maxAgeMinutes = Number(maxAgeMinutes);
+  if (!Number.isInteger(maxAgeMinutes) || maxAgeMinutes <= 0) {
+    throw new Error("access token duration must be a positive integer (minutes)");
+  }
+  const expiresIn = `${maxAgeMinutes}m`;
+
   const accessToken = jwt.sign(
     { id: user.id, username: user.username, name: user.name },
     SECRET_KEY,
-    { expiresIn: ACCESS_TOKEN_EXPIRY }
+    { expiresIn }
   );
 
   const refreshToken = jwt.sign({ id: user.id }, REFRESH_SECRET_KEY, {
@@ -52,17 +59,25 @@ const generateTokens = (user) => {
   db.refreshTokens.push(refreshToken);
   writeDatabase(db);
 
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, accessTokenMaxAge: maxAgeMinutes };
 };
 
 // Login route
 router.post("/login", (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, accessTokenMaxAge } = req.body;
 
   if (!username || !password) {
     return res
       .status(400)
       .json({ message: "Username and password are required" });
+  }
+
+  // Validate accessTokenMaxAge if provided
+  if (accessTokenMaxAge !== undefined) {
+    const n = Number(accessTokenMaxAge);
+    if (!Number.isInteger(n) || n <= 0) {
+      return res.status(400).json({ message: "access token duration must be a positive integer (minutes)" });
+    }
   }
 
   // Find user in the database
@@ -75,29 +90,48 @@ router.post("/login", (req, res) => {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  const tokens = generateTokens(user);
+  // Pass user-supplied max age (in minutes) if provided
+  try {
+    const tokens = generateTokens(user, accessTokenMaxAge);
 
-  // Set tokens as HTTP-only cookies
-  res.cookie("accessToken", tokens.accessToken, ACCESS_COOKIE_OPTIONS);
-  res.cookie("refreshToken", tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
+    // Set tokens as HTTP-only cookies (accessToken maxAge matches token expiry)
+    res.cookie("accessToken", tokens.accessToken, {
+      ...ACCESS_COOKIE_OPTIONS,
+      maxAge: tokens.accessTokenMaxAge * 60 * 1000, // ms
+    });
+    res.cookie("refreshToken", tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
 
-  // Return user information (but not the tokens, as they're in cookies now)
-  res.json({
-    user: {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-    },
-    message: "Login successful",
-  });
+    // Return user information and access token in response (for Authorization header usage)
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+      },
+      accessToken: tokens.accessToken,
+      accessTokenMaxAge: tokens.accessTokenMaxAge,
+      message: "Login successful",
+    });
+  } catch (err) {
+    return res.status(400).json({ message: err.message });
+  }
 });
 
 // Refresh token route
 router.post("/refresh-token", (req, res) => {
   const refreshToken = req.cookies.refreshToken;
+  const { accessTokenMaxAge } = req.body || 15;
 
   if (!refreshToken) {
     return res.status(401).json({ message: "Refresh token missing" });
+  }
+
+  // Validate accessTokenMaxAge if provided
+  if (accessTokenMaxAge !== undefined) {
+    const n = Number(accessTokenMaxAge);
+    if (!Number.isInteger(n) || n <= 0) {
+      return res.status(400).json({ message: "access token duration must be a positive integer (minutes)" });
+    }
   }
 
   // Check if refresh token exists in database
@@ -125,12 +159,18 @@ router.post("/refresh-token", (req, res) => {
     );
     writeDatabase(db);
 
-    const tokens = generateTokens(user);
+    // Pass user-supplied max age (in minutes) if provided
+    const tokens = generateTokens(user, accessTokenMaxAge);
 
-    res.cookie("accessToken", tokens.accessToken, ACCESS_COOKIE_OPTIONS);
+    // Set new tokens as HTTP-only cookies (accessToken maxAge matches token expiry)
+    res.cookie("accessToken", tokens.accessToken, {
+      ...ACCESS_COOKIE_OPTIONS,
+      maxAge: tokens.accessTokenMaxAge * 60 * 1000, // ms
+    });
     res.cookie("refreshToken", tokens.refreshToken, REFRESH_COOKIE_OPTIONS);
 
-    res.json({ message: "Token refreshed successfully" });
+    // Return new access token in response (for Authorization header usage)
+    res.json({ accessToken: tokens.accessToken, accessTokenMaxAge: tokens.accessTokenMaxAge, message: "Token refreshed successfully" });
   } catch (error) {
     // If refresh token is expired or invalid
     if (error.name === "TokenExpiredError") {
@@ -173,7 +213,5 @@ router.post("/logout", (req, res) => {
 
   res.json({ message: "Logged out successfully" });
 });
-
-module.exports = router;
 
 module.exports = router;

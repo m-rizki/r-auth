@@ -3,8 +3,14 @@ const jwt = require("jsonwebtoken");
 const SECRET_KEY = process.env.SECRET_KEY;
 
 const authMiddleware = (req, res, next) => {
-  // Get the token from cookies instead of headers
-  const token = req.cookies.accessToken;
+  // Prefer access token from Authorization header if both are present, fallback to cookie
+  let token;
+  const authHeader = req.headers["authorization"];
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7);
+  } else if (req.cookies && req.cookies.accessToken) {
+    token = req.cookies.accessToken;
+  }
 
   if (!token) {
     return res.status(401).json({ message: "Authentication required" });

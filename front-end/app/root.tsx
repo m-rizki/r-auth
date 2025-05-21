@@ -1,5 +1,6 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -51,25 +52,38 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
+    switch (error.status) {
+      case 401:
+        message = "401 - Unauthorized";
+        details = "You are not authorized to access this page.";
+        break;
+      case 404:
+        message = "404 - Not Found";
+        details = "The requested page could not be found.";
+        break;
+      default:
+        message = `Error ${error.status}`;
+        details = error.statusText || details;
+        break;
+    }
+  } else if (import.meta.env.DEV && error instanceof Error) {
     details = error.message;
     stack = error.stack;
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <main className="container mx-auto p-4 pt-16">
+      <h1 className="mb-4 text-3xl font-bold">{message}</h1>
+      <p className="mb-4">{details}</p>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <pre className="w-full overflow-x-auto bg-gray-100 p-4 text-sm">
           <code>{stack}</code>
         </pre>
       )}
+
+      <Link to={"/"} className="btn btn-link px-0">
+        Back to home
+      </Link>
     </main>
   );
 }

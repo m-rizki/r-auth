@@ -1,24 +1,47 @@
 import axios from "axios";
+import { Link, useNavigate } from "react-router";
 import { serverUrl } from "utils/server-util";
 
 export default function ProtectedPage() {
-  const handleMe = () => {
-    const response = axios.get(serverUrl + "/me", { withCredentials: true });
-    console.log(response);
+  const navigate = useNavigate();
+
+  const handleMe = async () => {
+    try {
+      const response = await axios.get(serverUrl + "/me", {
+        withCredentials: true,
+      });
+      const data = response.data;
+      alert("Name: " + data.user?.name);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
   };
 
-  const handleLogout = () => {
-    const response = axios.post(serverUrl + "/logout", null, {
-      withCredentials: true,
-    });
-    console.log(response);
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post(serverUrl + "/logout", null, {
+        withCredentials: true,
+      });
+      const data = response.data;
+      alert(data.message);
+    } catch (error) {
+      console.error("Error logging out:", error);
+    } finally {
+      navigate("/");
+    }
   };
 
-  const handleRefreshToken = () => {
-    const response = axios.post(serverUrl + "/refresh-token", null, {
-      withCredentials: true,
-    });
-    console.log(response);
+  const handleRefreshToken = async () => {
+    try {
+      const response = await axios.post(serverUrl + "/refresh-token", null, {
+        withCredentials: true,
+      });
+      const data = response.data;
+      alert(data.message);
+    } catch (error) {
+      alert("Error refreshing token");
+      navigate("/");
+    }
   };
 
   return (
@@ -44,6 +67,13 @@ export default function ProtectedPage() {
           >
             logout
           </button>
+        </div>
+
+        <div className="mt-8 space-y-0 text-center">
+          <Link to={"/"} className="btn btn-link px-0">
+            Back to login page
+          </Link>
+          <p className="text-xs">(not work if you are logged in)</p>
         </div>
       </div>
     </div>

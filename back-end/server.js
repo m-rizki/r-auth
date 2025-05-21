@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
 const fs = require("fs");
 const bodyParser = require("body-parser");
@@ -50,20 +50,12 @@ if (!fs.existsSync("./db.json")) {
 // Routes
 app.use("/", authRoutes);
 
-// Protected route example
-app.get("/protected", authMiddleware, (req, res) => {
-  res.json({
-    message: "This is a protected route",
-    user: req.user,
-  });
-});
-
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Available endpoints:`);
   console.log(`- POST /login (authenticate user)`);
-  console.log(`- GET /protected (protected route)`);
   console.log(`- POST /refresh-token (get new access token)`);
   console.log(`- GET /me (get user info)`);
+  console.log(`- POST /logout (clear access and refresh tokens)`);
 });

@@ -1,8 +1,8 @@
-import { Link } from "react-router";
+import { Link, redirect, useNavigate } from "react-router";
 import type { Route } from "./+types/home";
-import { AlertCircle, KeyRound } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { useForm } from "react-hook-form";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { serverUrl } from "utils/server-util";
 
 export function meta({}: Route.MetaArgs) {
@@ -15,9 +15,32 @@ export function meta({}: Route.MetaArgs) {
 type FormDataType = {
   username: string;
   password: string;
+  accessTokenMaxAge: string;
 };
 
+export async function clientLoader() {
+  try {
+    await axios.get(serverUrl + "/me", { withCredentials: true });
+    return redirect("/protected");
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+  }
+}
+
+clientLoader.hydrate = true as const;
+
+export function HydrateFallback() {
+  return (
+    <div className="hero min-h-screen">
+      <div className="hero-content text-center">
+        <p>Loading...</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
+  const navigate = useNavigate();
   const {
     reset,
     handleSubmit,
@@ -27,6 +50,7 @@ export default function Home() {
     defaultValues: {
       username: "",
       password: "",
+      accessTokenMaxAge: "15",
     },
   });
 
@@ -34,14 +58,28 @@ export default function Home() {
     const payload = {
       username: data.username,
       password: data.password,
+      accessTokenMaxAge: parseInt(data.accessTokenMaxAge),
     };
 
-    const url = serverUrl + "/login";
-    const response = await axios.post(url, payload, { withCredentials: true });
-    console.log(response.data);
-
-    reset({ username: "", password: "" });
-    console.log(payload);
+    try {
+      const url = serverUrl + "/login";
+      await axios.post(url, payload, { withCredentials: true });
+      reset({ username: "", password: "", accessTokenMaxAge: "15" });
+      navigate("/protected");
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const status = axiosError.response.status;
+        const data = axiosError.response.data;
+        if (status === 401) {
+          alert("Invalid username or password");
+        } else if (status === 400) {
+          alert("Bad request: " + data);
+        } else {
+          alert("An error occurred: " + data);
+        }
+      }
+    }
   };
 
   return (
@@ -63,14 +101,6 @@ export default function Home() {
                 Go to protected route
               </Link>
             </div>
-
-            {/* <div
-              role="alert"
-              className="alert alert-outline alert-info mt-4 py-2"
-            >
-              <AlertCircle size={20} />
-              <span>New software update available.</span>
-            </div> */}
           </div>
         </div>
         <div className="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
@@ -86,7 +116,7 @@ export default function Home() {
                   <input
                     type="text"
                     className={`input w-full ${errors.username ? "border-error" : ""}`}
-                    placeholder="Username"
+                    placeholder="username"
                     {...register("username", {
                       required: "username is required",
                     })}
@@ -107,7 +137,7 @@ export default function Home() {
                   <input
                     type="password"
                     className={`input w-full ${errors.password ? "border-error" : ""}`}
-                    placeholder="Password"
+                    placeholder="password"
                     {...register("password", {
                       required: "password is required",
                     })}
@@ -115,6 +145,37 @@ export default function Home() {
                   {errors.password && (
                     <p className="text-error text-xs">
                       {errors.password.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label
+                    className={`label ${errors.accessTokenMaxAge ? "text-error" : ""}`}
+                  >
+                    Access token duration (minutes)
+                  </label>
+
+                  <input
+                    type="number"
+                    className={`input w-full ${errors.accessTokenMaxAge ? "border-error" : ""}`}
+                    placeholder="access token duration"
+                    {...register("accessTokenMaxAge", {
+                      required: "Access token duration (minutes) is required",
+                      min: {
+                        value: 1,
+                        message: "Minimum value is 1 minute",
+                      },
+                      max: {
+                        value: 60,
+                        message: "Maximum value is 60 minutes",
+                      },
+                    })}
+                  />
+
+                  {errors.accessTokenMaxAge && (
+                    <p className="text-error text-xs">
+                      {errors.accessTokenMaxAge.message}
                     </p>
                   )}
                 </div>
