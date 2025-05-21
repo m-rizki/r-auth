@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-const SECRET_KEY = "your_jwt_secret_key"; // In production, use environment variables
+const SECRET_KEY = process.env.SECRET_KEY;
 
 const authMiddleware = (req, res, next) => {
   // Get the token from cookies instead of headers

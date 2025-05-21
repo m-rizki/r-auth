@@ -5,8 +5,8 @@ const authMiddleware = require("../middleware/auth");
 
 const router = express.Router();
 
-const SECRET_KEY = "your_jwt_secret_key"; // In production, use environment variables
-const REFRESH_SECRET_KEY = "your_refresh_secret_key"; // In production, use environment variables
+const SECRET_KEY = process.env.SECRET_KEY;
+const REFRESH_SECRET_KEY = process.env.REFRESH_SECRET_KEY;
 const ACCESS_TOKEN_EXPIRY = "15m"; // 15 minutes
 const REFRESH_TOKEN_EXPIRY = "7d"; // 7 days
 
