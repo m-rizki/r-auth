@@ -14,7 +14,7 @@ This is the frontend for the Auth Example project. It demonstrates authenticatio
 
 ### Prerequisites
 
-- Node.js (v22 or newer recommended)
+- Node.js (v20 or newer recommended)
 - The backend server from this project running (see `../back-end/README.md`)
 
 ### Installation

@@ -1,6 +1,32 @@
-# Auth Example (Monorepo)
+# Auth Example
 
 This project demonstrates a full-stack authentication system using JWT access and refresh tokens, with both HTTP-only cookies and Authorization headers. It consists of a React frontend and an Express backend.
+
+## Tech Stack
+
+### Frontend
+
+- React 19
+- React Router v7
+- TypeScript
+- Axios
+- Tailwind CSS
+- DaisyUI
+- React Hook Form
+- Lucide React Icons
+- Vite
+
+### Backend
+
+- Node.js (Express.js)
+- JSON Web Token (jsonwebtoken)
+- dotenv
+- cookie-parser
+- cors
+- body-parser
+- Simple file-based storage (db.json)
+
+---
 
 ## Structure
 

@@ -1,8 +1,79 @@
-# Auth Example (Server)
+# Auth Example : Server
 
 This backend provides authentication APIs using JWT access and refresh tokens, supporting both HTTP-only cookies and Authorization headers. Users can control the access token's max age via the payload.
 
-## Base URL
+---
+
+## Features
+
+- JWT authentication with access and refresh tokens
+- HTTP-only cookie and Authorization header support
+- User login, logout, and token refresh endpoints
+- Simple file-based user and token storage (no database required)
+- CORS support for local development
+- Easily configurable via environment variables
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or newer recommended)
+
+### Installation
+
+```bash
+npm install
+```
+
+### Environment Setup
+
+Copy the example environment file and edit as needed:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` to set your secret keys and port if needed.
+
+### Running the Server
+
+For development (with auto-reload):
+
+```bash
+npm run dev
+```
+
+For production:
+
+```bash
+npm start
+```
+
+The server will run by default at [http://localhost:5000](http://localhost:5000)
+
+---
+
+## Project Structure
+
+```text
+back-end/
+├── db.json              # Simple file-based user/token storage
+├── server.js            # Main Express server
+├── routes/
+│   └── auth.js          # Authentication routes (login, refresh, logout, me)
+├── middleware/
+│   └── auth.js          # JWT authentication middleware
+├── .env.example         # Example environment variables
+└── README.md            # This documentation
+```
+
+---
+
+## API Documentation
+
+### Base URL
 
 ```bash
 http://localhost:5000/
@@ -10,7 +81,7 @@ http://localhost:5000/
 
 ---
 
-## Authentication Flow
+### Authentication Flow
 
 - **Login:** Obtain access and refresh tokens.
 - **Get current user:** Use access token (via cookie or Authorization header).
@@ -19,9 +90,9 @@ http://localhost:5000/
 
 ---
 
-## Endpoints
+### Endpoints
 
-### 1. `POST /login`
+#### 1. `POST /login`
 
 Authenticate user and receive tokens.
 
@@ -49,7 +120,7 @@ Authenticate user and receive tokens.
 }
 ```
 
-### 2. `POST /refresh-token`
+#### 2. `POST /refresh-token`
 
 Get a new access token using the refresh token cookie.
 
@@ -78,7 +149,7 @@ Get a new access token using the refresh token cookie.
 }
 ```
 
-### 3. `GET /me`
+#### 3. `GET /me`
 
 Get current user info (protected route).
 
@@ -96,7 +167,7 @@ Get current user info (protected route).
 }
 ```
 
-### 4. `POST /logout`
+#### 4. `POST /logout`
 
 Logout user and invalidate refresh token.
 
@@ -116,7 +187,7 @@ Logout user and invalidate refresh token.
 
 ---
 
-## Notes
+### Notes
 
 - Access token can be sent via HTTP-only cookie or Authorization header. If both are present, the header is preferred.
 - The `accessTokenMaxAge` parameter (in minutes) controls the access token's expiry and cookie max age. Default is 15 minutes.
@@ -125,7 +196,7 @@ Logout user and invalidate refresh token.
 
 ---
 
-## Example Users
+### Example Users
 
 ```json
 {
@@ -148,7 +219,7 @@ Logout user and invalidate refresh token.
 
 ---
 
-## Error Responses
+### Error Responses
 
 - `401 Unauthorized` for invalid or expired tokens, missing credentials, or invalid refresh tokens.
 - `400 Bad Request` for missing required fields.
