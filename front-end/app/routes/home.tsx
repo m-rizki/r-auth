@@ -8,8 +8,8 @@ import apiWithCredentials from "~/api/axios";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Auth Example" },
-    { name: "description", content: "Welcome to Auth Example!" },
+    { title: "r-auth" },
+    { name: "description", content: "Welcome to r-auth!" },
   ];
 }
 
@@ -89,7 +89,7 @@ export default function Home() {
         <div className="text-center lg:text-left">
           <div className="flex items-center justify-center gap-4 lg:justify-start">
             <KeyRound size={32} />
-            <h1 className="text-4xl font-bold">Auth Example</h1>
+            <h1 className="text-4xl font-bold">r-auth</h1>
           </div>
           <div className="min-w-sm py-6">
             <p>list credentials (username: password)</p>

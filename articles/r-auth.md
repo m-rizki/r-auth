@@ -1,4 +1,4 @@
-# Auth Example: Flexible Authentication for Web Apps
+# r-auth : Flexible Authentication for Web Apps
 
 Authentication is a cornerstone of every serious web application. This project shows how you can build a robust, secure, and flexible authentication system using React, TypeScript, and Express.js with just a simple config change, you can switch between [HTTP-only cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies#security), [Authorization headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Authorization), or both.
 
@@ -195,4 +195,4 @@ export default function ProtectedPage() {
 
 ## Conclusion
 
-Auth Example is a practical, template for building secure and flexible authentication in your own apps. Dive into the code, experiment with the configuration, and make it your own—the future of authentication is seamless, secure, and developer-friendly!
+r-auth is a practical, template for building secure and flexible authentication in your own apps. Dive into the code, experiment with the configuration, and make it your own—the future of authentication is seamless, secure, and developer-friendly!

@@ -1,4 +1,4 @@
-# Auth Example : Server
+# r-auth : Server
 
 This backend provides authentication APIs using JWT access and refresh tokens, supporting both HTTP-only cookies and Authorization headers. You can use either or both, depending on your frontend config.
 

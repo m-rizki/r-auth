@@ -1,6 +1,6 @@
-# Auth Example : Client
+# r-auth : Client
 
-This is the frontend for the Auth Example project. It demonstrates flexible authentication using JWT access and refresh tokens, with support for HTTP-only cookies, Authorization headers, or both. Built with React Router v7, TypeScript, Tailwind CSS, and Axios.
+This is the frontend for the r-auth project. It demonstrates flexible authentication using JWT access and refresh tokens, with support for HTTP-only cookies, Authorization headers, or both. Built with React Router v7, TypeScript, Tailwind CSS, and Axios.
 
 ---
 

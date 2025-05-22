@@ -1,4 +1,4 @@
-# Auth Example
+# r-auth
 
 A full-stack authentication system demonstrating flexible, JWT authentication using both HTTP-only cookies and Authorization headers. Built with React (frontend) and Express.js (backend), this project lets you choose your preferred authentication method with minimal code changes.
 
