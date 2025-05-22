@@ -8,7 +8,7 @@ A full-stack authentication system demonstrating flexible, JWT authentication us
 
 - Secure login, logout, and protected routes
 - JWT access & refresh token flow
-- Automatic token refresh on the frontend
+- Token refresh via axios interceptor
 - Flexible: supports HTTP-only cookies, Authorization header, or both
 - Simple file-based user/token storage (no DB required)
 - Modern UI with React, Tailwind CSS, DaisyUI
@@ -62,14 +62,6 @@ A full-stack authentication system demonstrating flexible, JWT authentication us
 
 - Frontend: <http://localhost:5173>
 - Backend: <http://localhost:5000>
-
----
-
-## Authentication Flow
-
-- **Login:** User logs in, receives access and refresh tokens (as cookies, tokens, or both)
-- **Access Protected Route:** If the access token is valid, user proceeds. If expired, frontend auto-refreshes and retries
-- **Logout:** Both tokens are invalidated and cleared
 
 ---
 

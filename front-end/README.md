@@ -7,7 +7,6 @@ This is the frontend for the Auth Example project. It demonstrates flexible auth
 ## Features
 
 - Login, logout, and protected routes
-- Automatic token refresh (handles 401s)
 - Flexible Axios config: use cookies, Authorization header, or both
 - Modern UI with Tailwind CSS and DaisyUI
 - SSR-ready, Docker-ready
@@ -34,7 +33,7 @@ import { apiWithBoth } from "~/api/axios"; // both
 ## Authentication Flow
 
 - Login: POST `/login` (tokens set as cookies or returned in response)
-- Access protected: GET `/me` (auto-refreshes token if needed)
+- Access protected: GET `/me`
 - Refresh Token : POST `/refresh-token` (Get new access token)
 - Logout: POST `/logout`
 

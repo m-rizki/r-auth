@@ -3,7 +3,7 @@ import { serverUrl } from "utils/server-util";
 
 /**
  * Flexible API client with support for cookie-based and token-based authentication
- * Features: automatic token refresh, concurrent request handling, configurable storage
+ * Features: token refresh, concurrent request handling, configurable storage
  */
 
 // ========================
@@ -114,7 +114,7 @@ function createApiInstance(config: ApiConfig = defaultConfig) {
     async (error) => {
       const originalRequest = error.config;
 
-      // Handle 401 errors with automatic token refresh
+      // Handle 401 errors with token refresh
       // Skip login/refresh endpoints to prevent infinite loops
       if (
         error.response &&
