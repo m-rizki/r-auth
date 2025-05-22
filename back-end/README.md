@@ -1,228 +1,125 @@
 # Auth Example : Server
 
-This backend provides authentication APIs using JWT access and refresh tokens, supporting both HTTP-only cookies and Authorization headers. Users can control the access token's max age via the payload.
+This backend provides authentication APIs using JWT access and refresh tokens, supporting both HTTP-only cookies and Authorization headers. You can use either or both, depending on your frontend config.
 
 ---
 
 ## Features
 
-- JWT authentication with access and refresh tokens
+- JWT authentication (access & refresh tokens)
 - HTTP-only cookie and Authorization header support
-- User login, logout, and token refresh endpoints
-- Simple file-based user and token storage (no database required)
-- CORS support for local development
-- Easily configurable via environment variables
+- Simple file-based user/token storage (`db.json`)
+- CORS for local dev
+- Easily configurable via `.env`
 
 ---
 
-## Getting Started
+## Endpoints
 
-### Prerequisites
-
-- Node.js (v18 or newer recommended)
-
-### Installation
-
-```bash
-npm install
-```
-
-### Environment Setup
-
-Copy the example environment file and edit as needed:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` to set your secret keys and port if needed.
-
-### Running the Server
-
-For development (with auto-reload):
-
-```bash
-npm run dev
-```
-
-For production:
-
-```bash
-npm start
-```
-
-The server will run by default at [http://localhost:5000](http://localhost:5000)
+- `POST /login` — Authenticate user, set tokens (cookie/header)
+- `POST /refresh-token` — Get new access token (cookie/header)
+- `GET /me` — Get user info (protected)
+- `POST /logout` — Invalidate refresh token, clear cookies
 
 ---
 
-## Project Structure
+## API Spec
 
-```text
-back-end/
-├── db.json              # Simple file-based user/token storage
-├── server.js            # Main Express server
-├── routes/
-│   └── auth.js          # Authentication routes (login, refresh, logout, me)
-├── middleware/
-│   └── auth.js          # JWT authentication middleware
-├── .env.example         # Example environment variables
-└── README.md            # This documentation
-```
+### POST /login
 
----
+- **Description:** Authenticate user and receive access/refresh tokens.
+- **Request Body:**
 
-## API Documentation
+  ```json
+  {
+    "username": "user1",
+    "password": "password1",
+    "accessTokenMaxAge": 30 // (optional, in minutes, default: 15)
+  }
+  ```
 
-### Base URL
+- **Response:**
 
-```bash
-http://localhost:5000/
-```
+  - Sets `accessToken` and `refreshToken` as HTTP-only cookies (and/or returns token in response if using header)
+  - Returns user info and access token:
 
----
+  ```json
+  {
+    "user": { "id": 1, "username": "user1", "name": "User One" },
+    "accessToken": "...",
+    "accessTokenMaxAge": 30,
+    "message": "Login successful"
+  }
+  ```
 
-### Authentication Flow
+### POST /refresh-token
 
-- **Login:** Obtain access and refresh tokens.
-- **Get current user:** Use access token (via cookie or Authorization header).
-- **Refresh Token:** Get a new access token using the refresh token (cookie).
-- **Logout:** Invalidate refresh token and clear cookies.
+- **Description:** Get a new access token using the refresh token cookie.
+- **Request Body:**
 
----
+  ```json
+  {
+    "accessTokenMaxAge": 60 // (optional, in minutes, default: 15)
+  }
+  ```
 
-### Endpoints
+- **Cookies:** Requires `refreshToken` cookie
+- **Response:**
 
-#### 1. `POST /login`
+  - Sets new `accessToken` and `refreshToken` cookies (and/or returns token in response if using header)
+  - Returns new access token:
 
-Authenticate user and receive tokens.
+  ```json
+  {
+    "accessToken": "...",
+    "accessTokenMaxAge": 60,
+    "message": "Token refreshed successfully"
+  }
+  ```
 
-**Request Body:**
+### GET /me
 
-```json
-{
-  "username": "user1",
-  "password": "password1",
-  "accessTokenMaxAge": 30 // (optional, in minutes, default: 15)
-}
-```
+- **Description:** Get current user info (protected route).
+- **Authentication:**
+  - Send access token via HTTP-only cookie or Authorization header
+- **Response:**
 
-**Response:**
+  ```json
+  {
+    "user": { "id": 1, "username": "user1", "name": "User One" }
+  }
+  ```
 
-- Sets `accessToken` and `refreshToken` as HTTP-only cookies.
-- Returns access token and user info in JSON.
+### POST /logout
 
-```json
-{
-  "user": { "id": 1, "username": "user1", "name": "User One" },
-  "accessToken": "...",
-  "accessTokenMaxAge": 30,
-  "message": "Login successful"
-}
-```
+- **Description:** Logout user and invalidate refresh token.
+- **Cookies:** Requires `refreshToken` cookie
+- **Response:**
 
-#### 2. `POST /refresh-token`
+  - Clears `accessToken` and `refreshToken` cookies
 
-Get a new access token using the refresh token cookie.
-
-**Request Body:**
-
-```json
-{
-  "accessTokenMaxAge": 60 // (optional, in minutes, default: 15)
-}
-```
-
-**Cookies:**
-
-- Requires `refreshToken` cookie.
-
-**Response:**
-
-- Sets new `accessToken` and `refreshToken` cookies.
-- Returns new access token in JSON.
-
-```json
-{
-  "accessToken": "...",
-  "accessTokenMaxAge": 60,
-  "message": "Token refreshed successfully"
-}
-```
-
-#### 3. `GET /me`
-
-Get current user info (protected route).
-
-**Authentication:**
-
-- Send access token via:
-  - `Authorization: Bearer <accessToken>` header (preferred), or
-  - `accessToken` HTTP-only cookie
-
-**Response:**
-
-```json
-{
-  "user": { "id": 1, "username": "user1", "name": "User One" }
-}
-```
-
-#### 4. `POST /logout`
-
-Logout user and invalidate refresh token.
-
-**Cookies:**
-
-- Requires `refreshToken` cookie.
-
-**Response:**
-
-- Clears `accessToken` and `refreshToken` cookies.
-
-```json
-{
-  "message": "Logged out successfully"
-}
-```
+  ```json
+  {
+    "message": "Logged out successfully"
+  }
+  ```
 
 ---
 
-### Notes
+## Usage
 
-- Access token can be sent via HTTP-only cookie or Authorization header. If both are present, the header is preferred.
-- The `accessTokenMaxAge` parameter (in minutes) controls the access token's expiry and cookie max age. Default is 15 minutes.
-- Refresh token is always stored as an HTTP-only cookie and is valid for 7 days.
-- All responses are JSON.
-
----
-
-### Example Users
-
-```json
-{
-  "users": [
-    {
-      "id": 1,
-      "username": "user1",
-      "password": "password1",
-      "name": "User One"
-    },
-    {
-      "id": 2,
-      "username": "user2",
-      "password": "password2",
-      "name": "User Two"
-    }
-  ]
-}
-```
+1. Copy `.env.example` to `.env` and set your secrets
+2. Install dependencies: `npm install`
+3. Start server: `npm run dev`
 
 ---
 
-### Error Responses
+## Example Users
 
-- `401 Unauthorized` for invalid or expired tokens, missing credentials, or invalid refresh tokens.
-- `400 Bad Request` for missing required fields.
+See `db.json` for demo users:
+
+- user1 / password1
+- user2 / password2
 
 ---
 

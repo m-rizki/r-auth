@@ -3,13 +3,13 @@ import type { Route } from "./+types/home";
 import { KeyRound } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { AxiosError } from "axios";
-import api from "../api/axios";
 import { serverUrl } from "utils/server-util";
+import apiWithCredentials from "~/api/axios";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Auth Example" },
+    { name: "description", content: "Welcome to Auth Example!" },
   ];
 }
 
@@ -21,7 +21,7 @@ type FormDataType = {
 
 export async function clientLoader() {
   try {
-    await api.get(serverUrl + "/me");
+    await apiWithCredentials.get(serverUrl + "/me");
     return redirect("/protected");
   } catch (error) {
     console.error("Error fetching user data:", error);
@@ -64,7 +64,7 @@ export default function Home() {
 
     try {
       const url = serverUrl + "/login";
-      await api.post(url, payload);
+      await apiWithCredentials.post(url, payload);
       reset({ username: "", password: "", accessTokenMaxAge: "15" });
       navigate("/protected");
     } catch (error) {

@@ -1,111 +1,220 @@
 import axios from "axios";
 import { serverUrl } from "utils/server-util";
 
-// Create a custom Axios instance for all authenticated API requests
-const api = axios.create({
-  withCredentials: true, // Allows cookies (e.g., for refresh token via HttpOnly cookie)
-});
-
-// ========================
-// Request Interceptor
-// ========================
-
-// This interceptor adds the accessToken from localStorage (if available)
-// to every outgoing request's Authorization header.
-api.interceptors.request.use(
-  (config) => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (accessToken) {
-      config.headers = config.headers || {};
-      config.headers["Authorization"] = `Bearer ${accessToken}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error), // Forward any request errors
-);
-
-// ========================
-// Response Interceptor
-// ========================
-
-// These variables handle refresh logic and queuing
-let isRefreshing = false; // Flag to prevent multiple simultaneous refresh requests
-let failedQueue: any[] = []; // Queue to hold requests while refresh is in progress
-
 /**
- * Process all queued requests:
- * - If refresh succeeded, retry them with the new token.
- * - If refresh failed, reject them with the error.
+ * Flexible API client with support for cookie-based and token-based authentication
+ * Features: automatic token refresh, concurrent request handling, configurable storage
  */
-function processQueue(error: any, token: string | null = null) {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
+
+// ========================
+// Configuration
+// ========================
+
+interface ApiConfig {
+  useCredentials?: boolean; // Enable cookies (withCredentials)
+  useAuthHeader?: boolean;  // Enable JWT tokens in Authorization header
+  tokenStorageKey?: string; // Storage key for tokens
 }
 
-// Intercepts all responses to catch 401 (Unauthorized) errors and handle token refresh
-api.interceptors.response.use(
-  (response) => response, // Pass through successful responses
-  async (error) => {
-    const originalRequest = error.config;
+const defaultConfig: ApiConfig = {
+  useCredentials: true,
+  useAuthHeader: false,
+  tokenStorageKey: "accessToken",
+};
 
-    // Check if:
-    // - The error is 401
-    // - It's not already retried
-    // - The request is not for login or token refresh (to prevent infinite loops)
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url.endsWith("/login") &&
-      !originalRequest.url.endsWith("/refresh-token")
-    ) {
-      // If a refresh is already in progress, queue this request
-      if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            if (token) {
-              originalRequest.headers["Authorization"] = `Bearer ${token}`;
-            }
-            return api(originalRequest); // Retry original request with new token
-          })
-          .catch((err) => Promise.reject(err));
+// ========================
+// Token Management
+// ========================
+
+// Get token from localStorage or sessionStorage
+const getToken = (storageKey: string = "accessToken"): string | null => {
+  if (typeof window !== "undefined") {
+    return (
+      localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey)
+    );
+  }
+  return null;
+};
+
+// Store token in localStorage
+const setToken = (token: string, storageKey: string = "accessToken"): void => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(storageKey, token);
+  }
+};
+
+// Remove token from both localStorage and sessionStorage
+const removeToken = (storageKey: string = "accessToken"): void => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(storageKey);
+    sessionStorage.removeItem(storageKey);
+  }
+};
+
+// ========================
+// API Instance Factory
+// ========================
+
+function createApiInstance(config: ApiConfig = defaultConfig) {
+  const apiConfig: any = {};
+
+  // Enable cookies if configured
+  if (config.useCredentials) {
+    apiConfig.withCredentials = true;
+  }
+
+  const api = axios.create(apiConfig);
+
+  // ========================
+  // Request Interceptor
+  // ========================
+
+  // Add Authorization header if token-based auth is enabled
+  api.interceptors.request.use(
+    (requestConfig) => {
+      if (config.useAuthHeader) {
+        const token = getToken(config.tokenStorageKey);
+        if (token) {
+          requestConfig.headers.Authorization = `Bearer ${token}`;
+        }
       }
+      return requestConfig;
+    },
+    (error) => Promise.reject(error),
+  );
 
-      originalRequest._retry = true;
-      isRefreshing = true;
+  // ========================
+  // Response Interceptor
+  // ========================
 
-      try {
-        const refreshResponse = await api.post(serverUrl + "/refresh-token");
+  // Token refresh state - prevents multiple simultaneous refresh attempts
+  let isRefreshing = false;
+  let failedQueue: any[] = []; // Queue for requests waiting on token refresh
 
-        const { accessToken } = refreshResponse.data;
+  // Process all queued requests after token refresh completes
+  function processQueue(error: any, token?: string) {
+    failedQueue.forEach((prom) => {
+      if (error) {
+        prom.reject(error);
+      } else {
+        prom.resolve(token);
+      }
+    });
+    failedQueue = [];
+  }
 
-        if (accessToken) {
-          localStorage.setItem("accessToken", accessToken);
+  api.interceptors.response.use(
+    (response) => {
+      // Store new token from response if using token auth
+      if (config.useAuthHeader && response.data?.token) {
+        setToken(response.data.token, config.tokenStorageKey);
+      }
+      return response;
+    },
+    async (error) => {
+      const originalRequest = error.config;
+
+      // Handle 401 errors with automatic token refresh
+      // Skip login/refresh endpoints to prevent infinite loops
+      if (
+        error.response &&
+        error.response.status === 401 &&
+        !originalRequest._retry &&
+        !originalRequest.url.endsWith("/login") &&
+        !originalRequest.url.endsWith("/refresh-token")
+      ) {
+        
+        // Queue concurrent requests during token refresh
+        if (isRefreshing) {
+          return new Promise(function (resolve, reject) {
+            failedQueue.push({ resolve, reject });
+          }).then((token) => {
+            if (config.useAuthHeader && token) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            return api(originalRequest);
+          });
         }
 
-        processQueue(null, accessToken);
+        originalRequest._retry = true;
+        isRefreshing = true;
 
-        originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        localStorage.removeItem("accessToken");
-        processQueue(refreshError, null);
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
+        try {
+          // Attempt token refresh
+          const refreshResponse = await api.post(serverUrl + "/refresh-token");
+
+          let newToken = null;
+
+          // Extract and store new token
+          if (config.useAuthHeader) {
+            newToken =
+              refreshResponse.data?.token || refreshResponse.data?.access_token;
+            if (newToken) {
+              setToken(newToken, config.tokenStorageKey);
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            }
+          }
+
+          // Retry all queued requests with new token
+          processQueue(null, newToken);
+          return api(originalRequest);
+        } catch (refreshError) {
+          // Refresh failed - clear token and reject all queued requests
+          processQueue(refreshError);
+
+          if (config.useAuthHeader) {
+            removeToken(config.tokenStorageKey);
+          }
+
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
       }
-    }
 
-    return Promise.reject(error);
-  },
-);
+      return Promise.reject(error);
+    },
+  );
 
-export default api;
+  return api;
+}
+
+// ========================
+// Pre-configured Instances
+// ========================
+
+// Cookie-based authentication (original/legacy)
+export const apiWithCredentials = createApiInstance({
+  useCredentials: true,
+  useAuthHeader: false,
+});
+
+// JWT token-based authentication
+export const apiWithAuthHeader = createApiInstance({
+  useCredentials: false,
+  useAuthHeader: true,
+  tokenStorageKey: "accessToken",
+});
+
+// Both cookies and JWT tokens
+export const apiWithBoth = createApiInstance({
+  useCredentials: true,
+  useAuthHeader: true,
+  tokenStorageKey: "accessToken",
+});
+
+// Custom configuration factory
+export const createCustomApi = (config: ApiConfig) => createApiInstance(config);
+
+// Default export (backward compatibility)
+export default apiWithCredentials;
+
+// ========================
+// Helper Functions
+// ========================
+
+export const authHelpers = {
+  getToken: (key?: string) => getToken(key),
+  setToken: (token: string, key?: string) => setToken(token, key),
+  removeToken: (key?: string) => removeToken(key),
+};

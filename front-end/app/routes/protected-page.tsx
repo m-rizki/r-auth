@@ -1,4 +1,4 @@
-import api from "../api/axios";
+import apiWithCredentials from "~/api/axios";
 import { Link, useNavigate } from "react-router";
 import { serverUrl } from "utils/server-util";
 
@@ -7,17 +7,19 @@ export default function ProtectedPage() {
 
   const handleMe = async () => {
     try {
-      const response = await api.get(serverUrl + "/me");
+      const response = await apiWithCredentials.get(serverUrl + "/me");
       const data = response.data;
       alert("Name: " + data.user?.name);
     } catch (error) {
+      alert("Error fetching user data");
       console.error("Error fetching user data:", error);
+      navigate("/");
     }
   };
 
   const handleLogout = async () => {
     try {
-      const response = await api.post(serverUrl + "/logout");
+      const response = await apiWithCredentials.post(serverUrl + "/logout");
       const data = response.data;
       alert(data.message);
     } catch (error) {
@@ -29,7 +31,9 @@ export default function ProtectedPage() {
 
   const handleRefreshToken = async () => {
     try {
-      const response = await api.post(serverUrl + "/refresh-token");
+      const response = await apiWithCredentials.post(
+        serverUrl + "/refresh-token",
+      );
       const data = response.data;
       alert(data.message);
     } catch (error) {

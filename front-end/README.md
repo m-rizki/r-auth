@@ -1,73 +1,54 @@
 # Auth Example : Client
 
-This is the frontend for the Auth Example project. It demonstrates authentication using JWT access and refresh tokens, with support for both HTTP-only cookies and Authorization headers. The frontend is built with React Router v7, TypeScript, Tailwind CSS, and Axios.
+This is the frontend for the Auth Example project. It demonstrates flexible authentication using JWT access and refresh tokens, with support for HTTP-only cookies, Authorization headers, or both. Built with React Router v7, TypeScript, Tailwind CSS, and Axios.
+
+---
 
 ## Features
 
-- Login and protected routes
-- Access token and refresh token handling
-- Axios interceptor for Authorization header
-- Server-side rendering (SSR) support
+- Login, logout, and protected routes
+- Automatic token refresh (handles 401s)
+- Flexible Axios config: use cookies, Authorization header, or both
 - Modern UI with Tailwind CSS and DaisyUI
+- SSR-ready, Docker-ready
 
-## Getting Started
+---
 
-### Prerequisites
+## Usage
 
-- Node.js (v20 or newer recommended)
-- The backend server from this project running (see `../back-end/README.md`)
+- By default, the app uses HTTP-only cookies for authentication.
+- To use Authorization header or both, change the import in your code:
 
-### Installation
-
-```bash
-npm install
+```typescript
+import apiWithCredentials from "~/api/axios"; // cookies (default)
+import { apiWithAuthHeader } from "~/api/axios"; // header
+import { apiWithBoth } from "~/api/axios"; // both
 ```
 
-### Development
+1. Copy `.env.example` to `.env` and set your environment
+2. Install dependencies: `npm install`
+3. Start server: `npm run dev`
 
-Start the development server:
-
-```bash
-npm run dev
-```
-
-The app will be available at `http://localhost:5173`.
-
-### Building for Production
-
-```bash
-npm run build
-```
-
-### Docker
-
-You can build and run the frontend with Docker:
-
-```bash
-docker build -t auth-example-client .
-docker run -p 3000:3000 auth-example-client
-```
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and set the backend URL:
-
-```env
-VITE_CLIENT_SERVICE=http://localhost:5000
-```
-
-## Project Structure
-
-- `app/` — Main application code (routes, components, API)
-- `public/` — Static assets
-- `utils/` — Utility functions
+---
 
 ## Authentication Flow
 
-- Login with username and password
-- Access token is sent via HTTP-only cookie and/or Authorization header
-- Refresh token is managed via HTTP-only cookie
-- Protected routes require authentication
+- Login: POST `/login` (tokens set as cookies or returned in response)
+- Access protected: GET `/me` (auto-refreshes token if needed)
+- Refresh Token : POST `/refresh-token` (Get new access token)
+- Logout: POST `/logout`
+
+---
+
+## Project Structure
+
+- `app/` — Main app code (routes, components, API, and axios configuration)
+- `public/` — Static assets
+- `utils/` — Utility functions
+
+---
+
+---
 
 ## License
 
