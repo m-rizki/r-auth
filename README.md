@@ -4,6 +4,12 @@ A full-stack authentication system demonstrating flexible, JWT authentication us
 
 ---
 
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for more details.
+
+---
+
 ## Features
 
 - Secure login, logout, and protected routes
