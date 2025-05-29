@@ -89,7 +89,3 @@ import { apiWithBoth } from "~/api/axios";
 All token refresh, storage, and header logic is handled for you. See `front-end/app/api/axios.ts` for details.
 
 ---
-
-## License
-
-MIT
